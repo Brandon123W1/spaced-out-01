@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--title: text to appear in the page tab-->
+    <title>Projectile Luancher</title>
+
+    <!--icon - also known as "favicon: the tiny image to appear in the tab-->
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.glitch.com/95d403f5-4836-4f52-83ce-a43a613dc5c9%2Ffavicon_iam.png"
+      sizes="16x16"
+    />
+
+    <!-- metadata: machine readable, will not appear on the page - specify page description, keywords, author of the document, last modified, and other metadata -->
+    <meta charset="UTF-8" />
+    <meta name="description" content="InterActiMation: A-Frame Scene Starter" />
+    <meta name="keywords" content="InterActiMation,A-Frame,aframe,webvr" />
+
+   <!--script: include the a-frame javascript-->
+   <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+
+   <!--this physics engine is no longer maintined, we're waiting to see who might take it over...-->
+<!--https://www.donmccurdy.com/2020/09/06/projects-up-for-adoption/-->
+<script src="https://cdn.rawgit.com/donmccurdy/aframe-physics-system/v4.0.1/dist/aframe-physics-system.min.js"></script>
+
+<!--PROJECTILE LAUNCHER-->
+<script>
+  //aframe allows building components in javascript - this one is called "launcher" (must be applied to the scene or something in it)
+  AFRAME.registerComponent("launcher", {
+    //this function will be called when the scene initializes
+    init: function () {
+      //get the scene
+      var scenic = document.querySelector("a-scene");
+
+      //whenever a key is released, run a function for that event
+      document.body.onkeyup = function (e) {
+        //if the key released is <p>
+        if (e.keyCode == 32) {
+          //get the camera
+          var cam = document.querySelector("a-scene").camera.el.object3D;
+          //create a 3D vector (x, y, z)
+          var camVec = new THREE.Vector3();
+          //get the camera "direction" in x, y, z space
+          var camDir = cam.getWorldDirection(camVec);
+
+          //run this only if the camera is looking at or above the horizon
+          if (cam.rotation.x >= -3) {
+            //FYI: this block of code will log to the console the numers that make up the directional vector of the camera
+            console.log("camDir.x = " + camDir.x);
+            console.log("camDir.y = " + camDir.y);
+            console.log("camDir.z = " + camDir.z);
+
+            //create our own Vector3-like variable describing the exact opposite of the camera direction, this vector will supply the velocity for our projectile
+            var velo = {
+              x: -camDir.x * 24,
+              y: -camDir.y * 60,
+              z: -camDir.z * 24,
+            };
+
+            //create a projectile (must be "appended" to the scene)
+            var projectile = document.createElement("a-entity");
+
+            //set the projectile's attrubutes in javascript - not as easy as declarative html, but not rocket science either...
+            projectile.setAttribute("geometry", {
+              primitive: "torusKnot",
+              radius: 0.2,
+              radiusTubular: 0.05,
+              segmentsRadial: 6,
+              segmentsTubular: 6,
+            });
+            projectile.setAttribute("material", {
+              color: "fuchsia",
+            });
+
+            //makes the projectile very massive
+            projectile.setAttribute("dynamic-body", { mass: 200 });
+            projectile.object3D.position.set(
+              cam.position.x,
+              cam.position.y - 0.1,
+              cam.position.z
+            );
+            //gives the projectile an initial velocity into  direction the camera's looking
+            projectile.setAttribute("velocity", velo, {});
+            //appends the projectile as a "child" of the scene
+            scenic.appendChild(projectile);
+            //gives the projectile a lifetime of 6 seconds then removes it from the scene
+            setTimeout(function () {
+              scenic.removeChild(projectile);
+            }, 6000);
+          }
+        }
+      };
+    },
+  });
+</script>
+
+
+  <body>
+    <!--a-scene: references content in the script src to create the aframe scene, which includes a default camera and light-->
+
+    <a-scene
+      id="scenic"
+      background="color: #000000"
+      vr-mode-ui="enabled: false"
+      launcher
+    >
+    
+<!--LIGHT: adding a light turns off the default lights that A-Frame autmatically applies-->    
+<a-entity light="type: point; color: red"
+position="0 1.6 0"></a-entity>
+
+      <!--STACK of BOXES, from top down-->
+      
+      <!--EMISSIVE purple box-->
+      <a-entity
+      geometry="primitive: box"
+      position="-1 2.7 -3"
+      rotation="0 45 0"
+      material="color: purple; emissive: purple"
+      light="type: point; color: yellow"
+      shadow
+      dynamic-body
+    ></a-entity>
+      <a-entity
+      geometry="primitive: box"
+      position="-1 1.7 -3"
+      rotation="0 45 0"
+      material="color: orange"
+      shadow
+      dynamic-body
+    ></a-entity>
+      <a-entity 
+        geometry="primitive: box"
+        position="-1 0.7 -3"
+        rotation="0 45 0"
+        material="color: #4CC3D9"
+        shadow
+        dynamic-body
+      ></a-entity>
+
+      <!--sphere-->
+      <a-entity
+        id="sphere"
+        geometry="primitive: sphere; radius:1.25"
+        position="0 1.4 -5"
+        material="color: #EF2D5E"
+        shadow
+        dynamic-body
+      ></a-entity>
+
+      <!--cylinder-->
+      <a-entity
+        id="cylinder"
+        geometry="primitive: cylinder; radius: 0.5; height: 1.5"
+        position="1 1 -3"
+        material="color: yellow"
+         light="type: point; color: yellow"
+        shadow
+        dynamic-body
+      ></a-entity>
+
+      <!--ground plane-->
+      <a-entity
+        id="groundplane"
+        geometry="primitive: plane; width: 200; height: 200 shadow"
+        position="0 0 -4"
+        rotation="-90 0 0"
+        material="color:#7BC8A4"
+        shadow
+        static-body
+      ></a-entity>
+
+      <!--logohedron: image texture and animation in a handy logo form-->
+      <a-entity
+        id="logohedron"
+        geometry="primitive: octahedron; radius: 0.2"
+        position="0 2.5 -3"
+        material="color: pink"
+        shadow
+        animation__rot="property:rotation; to: 0 -359 0; dur: 3000; loop: true; easing: linear"
+        animation__pos="property: position; to: 0 3 -3; loop: true; dir: alternate; easing: easeInOutSine"
+        static-body
+      >
+      </a-entity>
+
+      <!--closes the a-frame scene-->
+    </a-scene>
+  </body>
+</html>
